@@ -1,0 +1,342 @@
+---
+title: "我國100-104年死因統計"
+output: github_document
+---
+指導老師：曾意儒
+報告者：B0244143  張芳瑀
+
+
+#資料介紹：
+運用政府資料開放平台的死因統計作為報告用資料，所用到的資料年份為民國100-104年，裡面有一個Excel紀錄欄位和代碼所表示。
+以下為欄位介紹
+year	  county	      cause	    sex	  age_code	N
+年度別	鄉鎮市區代碼	死亡原因	性別	年齡代碼	死亡數
+而每年的死因統計則是txt檔，要先轉成csv檔才能匯入Rstudio，才能作分析，做完分析後可以依據代碼去對照Excel，得知鄉鎮市區、死亡原因、性別、年齡。
+
+
+## 讀入資料
+
+```{r}
+library(readxl)
+library(readr)
+library(RColorBrewer)
+#欄位說明
+data.xls1<-read_excel("C:/Users/Fangyu/Desktop/全死因/col.xls",1)
+View(data.xls1)
+data.xls2<-read_excel("C:/Users/Fangyu/Desktop/全死因/col.xls",2)
+View(data.xls2)
+data.xls3<-read_excel("C:/Users/Fangyu/Desktop/全死因/col.xls",3)
+View(data.xls3)
+data.xls4<-read_excel("C:/Users/Fangyu/Desktop/全死因/col.xls",4)
+View(data.xls4)
+data.xls5<-read_excel("C:/Users/Fangyu/Desktop/全死因/col.xls",5)
+View(data.xls5)
+
+
+#各年死因統計
+data1<-read_csv("C:/Users/Fangyu/Desktop/全死因/dead100.csv")
+View(data1)
+data2<-read_csv("C:/Users/Fangyu/Desktop/全死因/dead101.csv")
+View(data2)
+data3<-read_csv("C:/Users/Fangyu/Desktop/全死因/dead102.csv")
+View(data3)
+data4<-read_csv("C:/Users/Fangyu/Desktop/全死因/dead103.csv")
+View(data4)
+data5<-read_csv("C:/Users/Fangyu/Desktop/全死因/dead104.csv")
+View(data5)
+```
+
+## 資料處理與清洗
+1.判斷資料型別2.將有NA的資料移除
+
+處理資料
+```{r}
+class(data.xls1)
+class(data.xls2)
+class(data.xls3)
+class(data.xls4)
+class(data.xls5)
+class(data1)
+class(data2)
+class(data3)
+class(data4)
+class(data5)
+
+
+data1<-data1[complete.cases(data1),]
+data2<-data2[complete.cases(data2),]
+data3<-data3[complete.cases(data3),]
+data4<-data4[complete.cases(data4),]
+data5<-data5[complete.cases(data5),]
+
+```
+
+
+#分析議題：
+現代科技變更，生活品質提升，醫療技術進步，但人依舊逃離不了生老病死，不管貧富男女老少，因各種原因沒了生命，最終還是得面臨死亡，正因為每天有許多的生命正在消逝，藉由統計的數據去了解其中因素，來探討分析其中的關聯性。
+
+#假設：
+大部分的人可能認為住在生活機能高的都市當中，可以獲得較多醫療資源，讓並病痛快速復原，所以我在這裡假設都市的死亡人數應該比較低。還有一般人會覺得男生比女生健壯許多，所以比女生更不容易有病痛，所以我假設女生死亡率比男生高。
+
+
+#分析結果：
+
+## 100-104年各區域死亡數
+
+```{r}
+library(data.table)
+library(datasets) 
+library(ggplot2)
+
+data100<-data.table(data1)
+deadpre100<-data100[by=county]
+deadpre100<-data100[,.(Number=sum(N)),
+                  by=county]
+deadpre100
+
+ggplot(deadpre100,
+       aes(x= county,
+           y= Number)) +
+  geom_point()
+
+#-------------------------------------
+
+data101<-data.table(data2)
+deadpre101<-data101[,.(Number=sum(N)),
+                  by=county]
+
+deadpre101
+
+ggplot(deadpre101,
+       aes(x= county,
+           y= Number)) +
+  geom_point()
+#-------------------------------------
+
+data102<-data.table(data3)
+deadpre102<-data102[,.(Number=sum(N)),
+                  by=county]
+
+deadpre102
+
+ggplot(deadpre102,
+       aes(x= county,
+           y= Number)) +
+  geom_point()
+#-------------------------------------
+
+data103<-data.table(data4)
+deadpre103<-data103[,.(Number=sum(N)),
+                  by=county]
+
+deadpre103
+
+ggplot(deadpre103,
+       aes(x= county,
+           y= Number)) +
+  geom_point()
+#-------------------------------------
+
+data104<-data.table(data5)
+deadpre104<-data104[,.(Number=sum(N)),
+                  by=county]
+
+deadpre104
+
+ggplot(deadpre104,
+       aes(x= county,
+           y= Number)) +
+  geom_point()
+
+```
+連五年死亡人數最高區域為新北市板橋區，而新北市中和區和新北市三重區也在五年的前五名內，圖中31XX都為新北市，而1XX為台北市，7XX為高雄市，點點的值都偏高，這三大城市都是發展為我國數一數二的，生活機能也很高，但死亡數卻也很高，推翻了前面所假設的都市的死亡人數低。
+
+
+
+## 100-104年死亡原因統計圖
+
+```{r}
+cause100<-data100[,.(Number=sum(N)),
+                  by=cause]
+sum<-sum(data100$N)
+
+cause100<-cbind(cause100,round((c(cause100$Number/sum*10^2)),digits=2))
+cause100.2<-cause100[head(order(cause100$V2,decreasing = T))]
+
+ggplot(cause100.2,aes(cause,V2))+
+  geom_bar(stat = "identity",width=0.8)+
+  labs(title="cause100")
+#---------------------------------------------------
+cause101<-data101[,.(Number=sum(N)),
+                  by=cause]
+sum<-sum(data101$N)
+
+cause101<-cbind(cause101,round((c(cause101$Number/sum*10^2)),digits=2))
+cause101.2<-cause101[head(order(cause101$V2,decreasing = T))]
+
+ggplot(cause101.2,aes(cause,V2))+
+  geom_bar(stat = "identity",width=0.8)+
+  labs(title="cause101") 
+#---------------------------------------------------
+cause102<-data102[,.(Number=sum(N)),
+                  by=cause]
+sum<-sum(data102$N)
+
+cause102<-cbind(cause102,round((c(cause102$Number/sum*10^2)),digits=2))
+cause102.2<-cause102[head(order(cause102$V2,decreasing = T))]
+
+ggplot(cause102.2,aes(cause,V2))+
+  geom_bar(stat = "identity",width=0.8)+
+  labs(title="cause102") 
+#---------------------------------------------------
+cause103<-data103[,.(Number=sum(N)),
+                  by=cause]
+sum<-sum(data103$N)
+
+cause103<-cbind(cause103,round((c(cause103$Number/sum*10^2)),digits=2))
+cause103.2<-cause103[head(order(cause103$V2,decreasing = T))]
+
+ggplot(cause103.2,aes(cause,V2))+
+  geom_bar(stat = "identity",width=0.8)+
+  labs(title="cause103") 
+#---------------------------------------------------
+cause104<-data104[,.(Number=sum(N)),
+                  by=cause]
+sum<-sum(data104$N)
+
+cause104<-cbind(cause104,round((c(cause104$Number/sum*10^2)),digits=2))
+cause104.2<-cause104[head(order(cause104$V2,decreasing = T))]
+
+ggplot(cause104.2,aes(cause,V2))+
+  geom_bar(stat = "identity",width=0.8)+
+  labs(title="cause104") 
+```
+五年來位居第一名為6(惡性腫瘤)，而16(心臟疾病)也在二、三名移動，還有再前面的糖尿病跟腦血管疾病，雖有可能為天生，可是大部分原因還是因為後天因素造成，並且是長時間，漫長導致的。
+
+
+
+##100-104死亡性別關係圖
+
+```{r}
+sex100<-data100[,.(Number=sum(N)),
+                  by=sex]
+sum<-sum(data100$N)
+
+sex100<-cbind(sex100,round((c(sex100$Number/sum*10^2)),digits=2))
+sex100$sex<-as.character(sex100$sex)
+
+
+myLabel = paste(sex100$sex,sex100$V2,"%",sep = "  ")
+
+ggplot(data=sex100) +
+
+    geom_bar(aes(x="",
+                 y=V2,
+                 fill=sex),
+                 stat = "identity",
+                 width = 1
+             ) +
+    coord_polar("y", start=0)+theme_void()+
+  scale_fill_discrete(labels = myLabel)+
+  geom_text(aes(x="",
+                 y=V2-15,label = myLabel), size = 5)
+#---------------------------------------------------
+sex101<-data101[,.(Number=sum(N)),
+                  by=sex]
+sum<-sum(data101$N)
+
+sex101<-cbind(sex101,round((c(sex101$Number/sum*10^2)),digits=2))
+sex101$sex<-as.character(sex101$sex)
+
+
+myLabel = paste(sex101$sex,sex101$V2,"%",sep = "  ")
+
+ggplot(data=sex101) +
+
+    geom_bar(aes(x="",
+                 y=V2,
+                 fill=sex),
+                 stat = "identity",
+                 width = 1
+             ) +
+    coord_polar("y", start=0)+theme_void()+
+  scale_fill_discrete(labels = myLabel)+
+  geom_text(aes(x="",
+                 y=V2-15,label = myLabel), size = 5)
+#---------------------------------------------------
+sex102<-data102[,.(Number=sum(N)),
+                  by=sex]
+sum<-sum(data102$N)
+
+sex102<-cbind(sex102,round((c(sex102$Number/sum*10^2)),digits=2))
+sex102$sex<-as.character(sex102$sex)
+
+
+myLabel = paste(sex102$sex,sex102$V2,"%",sep = "  ")
+
+ggplot(data=sex102) +
+
+    geom_bar(aes(x="",
+                 y=V2,
+                 fill=sex),
+                 stat = "identity",
+                 width = 1
+             ) +
+    coord_polar("y", start=0)+theme_void()+
+  scale_fill_discrete(labels = myLabel)+
+  geom_text(aes(x="",
+                 y=V2-15,label = myLabel), size = 5)
+#---------------------------------------------------
+sex103<-data103[,.(Number=sum(N)),
+                  by=sex]
+sum<-sum(data103$N)
+
+sex103<-cbind(sex103,round((c(sex103$Number/sum*10^2)),digits=2))
+sex103$sex<-as.character(sex103$sex)
+
+
+myLabel = paste(sex103$sex,sex103$V2,"%",sep = "  ")
+
+ggplot(data=sex103) +
+
+    geom_bar(aes(x="",
+                 y=V2,
+                 fill=sex),
+                 stat = "identity",
+                 width = 1
+             ) +
+    coord_polar("y", start=0)+theme_void()+
+  scale_fill_discrete(labels = myLabel)+
+  geom_text(aes(x="",
+                 y=V2-15,label = myLabel), size = 5)
+#---------------------------------------------------
+sex104<-data104[,.(Number=sum(N)),
+                  by=sex]
+sum<-sum(data104$N)
+
+sex104<-cbind(sex104,round((c(sex104$Number/sum*10^2)),digits=2))
+sex104$sex<-as.character(sex104$sex)
+
+
+myLabel = paste(sex104$sex,sex104$V2,"%",sep = "  ")
+
+ggplot(data=sex104) +
+
+    geom_bar(aes(x="",
+                 y=V2,
+                 fill=sex),
+                 stat = "identity",
+                 width = 1
+             ) +
+    coord_polar("y", start=0)+theme_void()+
+  scale_fill_discrete(labels = myLabel)+
+  geom_text(aes(x="",
+                 y=V2-15,label = myLabel), size = 5)
+```
+在大家的印象女生比男生柔弱，比較容易有病痛，又或者是面對車禍這類事故，男生的反應力就女生快等等，但數據顯示結果，男生的死亡率是比女生高的，推測可能是因為女生較為細心，對於事情的處理相較於男生會比較謹慎。
+
+
+
+#分析結果可能解決的問題
+文明病（又稱都市病）為一群疾病的通稱，當國家變得更工業化及人類活得更長壽時，這些疾病就會更常產生，身體健不健康？雖然是現代人愈來愈重視的議題，但也因為現代人生活型態轉變、長期曝露在不良的環境、日常生活飲食不正常下，許多文明病正悄悄上身。因此大家更需要正視生活作息、飲食習慣的調整，千萬別認為年輕沒差，就一直殘害身體。
+
